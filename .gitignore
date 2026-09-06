@@ -1,0 +1,8 @@
+# Potassium runtime-managed data
+Surge/
+icon-cache/
+preview-config/
+
+# Local/editor noise
+.DS_Store
+Thumbs.db
