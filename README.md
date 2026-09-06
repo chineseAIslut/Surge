@@ -22,13 +22,13 @@ The repository includes a screenshot of the GitHub-loaded Final Preview:
     README.md
     LucideBridge.lua         -- local Lucide.Lua-style PNG bridge
     lucide-*.svg            -- source-level Lucide references
-  SurgePreview.lua          -- workspace mirror used for direct Potassium execution
+  Final-Surge-Preview.lua    -- GitHub release preview
   SurgeBootstrap.lua         -- optional pinned GitHub bootstrap template
 ```
 
 The preview is intentionally outside the library folder:
 
-scripts/SurgePreview.lua
+scripts/Final-Surge-Preview.lua
 ```
 
 ## Loading with Potassium
@@ -44,7 +44,7 @@ local Surge = chunk()
 
 `loadfile(".Surge/Surge.lua", "@.Surge/Surge.lua")` is also documented, but the current Potassium page's signature requires a chunk name while its example omits it. The `readfile` + `loadstring` form avoids relying on that documentation inconsistency.
 
-The `scripts/SurgePreview.lua` location is a local delivery path requested for this project. Potassium's public filesystem docs do not promise that an absolute path outside `workspace` can be passed to `readfile`, so use the preview through the Potassium script runner or copy it into the executor workspace when that runner requires workspace-relative files.
+The `scripts/Final-Surge-Preview.lua` location is the local delivery path for the GitHub release preview. Potassium's public filesystem docs do not promise that an absolute path outside `workspace` can be passed to `readfile`, so use the preview through the Potassium script runner or copy it into the executor workspace when that runner requires workspace-relative files.
 ## GitHub distribution and workspace setup
 
 The published release currently pins `Surge.Distribution.Repository = "https://github.com/chineseAIslut/Surge"` and `Surge.Distribution.Ref = "v0.1.0"`. Future releases must update both together; the ref must remain an immutable release tag or commit.
