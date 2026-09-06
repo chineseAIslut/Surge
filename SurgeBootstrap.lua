@@ -1,10 +1,10 @@
 -- SurgeBootstrap.lua
--- Configure Repository and Ref before publishing a release.
--- The repository URL and immutable ref are intentionally unset in this source tree.
+-- Repository and Ref pin the published release; update both only for a new release.
+-- The bootstrap uses Potassium's documented request/filesystem APIs.
 
 local Distribution = {
-    Repository = "",
-    Ref = "",
+    Repository = "https://github.com/chineseAIslut/Surge",
+    Ref = "v0.1.0",
     Version = "0.1.0",
     RepositoryPaths = {
         Library = "Surge.lua",

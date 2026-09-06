@@ -41,13 +41,13 @@ local Surge = chunk()
 The `scripts/SurgePreview.lua` location is a local delivery path requested for this project. Potassium's public filesystem docs do not promise that an absolute path outside `workspace` can be passed to `readfile`, so use the preview through the Potassium script runner or copy it into the executor workspace when that runner requires workspace-relative files.
 ## GitHub distribution and workspace setup
 
-The repository owner must fill `Surge.Distribution.Repository` and `Surge.Distribution.Ref` in `Surge.lua` before publishing. They are intentionally empty in this source tree; Surge does not invent an owner, repository, tag, or commit.
+The published release currently pins `Surge.Distribution.Repository = "https://github.com/chineseAIslut/Surge"` and `Surge.Distribution.Ref = "v0.1.0"`. Future releases must update both together; the ref must remain an immutable release tag or commit.
 
 `Surge:GetBootstrap()` returns a short Potassium bootstrap only when both values are configured. The bootstrap uses Potassium's documented `request` API, requires a successful 2xx response, writes the pinned library and Lucide bridge into workspace-relative managed paths, checks the library version, and then loads the chunk. Mutable refs such as `main`, `master`, `dev`, and `latest` are rejected. The core library remains usable offline and does not download code automatically unless `EnsureAssets()` is explicitly called.
 
 ```lua
 local bootstrap, bootstrapError = Surge:GetBootstrap()
-assert(bootstrap, bootstrapError) -- repository/ref must be configured by the release owner
+assert(bootstrap, bootstrapError) -- fails clearly when a release pin is unset
 local loaded = assert(loadstring(bootstrap, "@SurgeBootstrap"))()
 ```
 
