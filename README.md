@@ -2,6 +2,12 @@
 
 Surge is a reusable, self-contained Luau UI library for scripts executed through an internal Roblox executor such as Potassium. It is **not** a Roblox Studio project and it is **not** a ModuleScript package.
 
+## Final preview
+
+The repository includes a screenshot of the GitHub-loaded Final Preview:
+
+![Final Surge Preview](assets/Final-Surge-Preview.png)
+
 ## Project layout
 
 ```text
