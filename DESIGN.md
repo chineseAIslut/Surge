@@ -31,7 +31,7 @@ The stable public model is `Surge -> Window -> Tab/Group -> Element`. Elements e
 
 ## Motion
 
-Motion is short, monochrome, and interruptible. `Surge.Animation` centralizes fast feedback (`100ms`), standard transitions (`160ms`), tab slides (`140ms`), message transitions (`160ms`), and menu morphing (`220ms`). Quad ease-out handles entry and direct response; ease-in handles exits. Active tweens are cancelled before replacement, stale completions are ignored, and state tokens make rapid tab and menu reversals settle on the latest request.
+Motion is short, monochrome, and interruptible. `Surge.Animation` centralizes fast feedback (`100ms`), standard transitions (`160ms`), tab slides (`140ms`), message transitions (`160ms`), and menu morphing (`220ms`). Quad ease-out handles entry and direct response; ease-in handles exits. Same-property tweens are cancelled before replacement, disjoint properties can animate concurrently, stale completions are ignored, and state tokens make rapid tab and menu reversals settle on the latest request.
 
 Tabs snapshot descendant visual properties, fade the outgoing page before sliding and revealing the incoming page, and keep a transition shield active until exactly one page is visible and interactive. Slider dragging remains immediate. Notifications and toasts wrap within viewport-derived bounds and collapse measured heights on close. Hide/Show converts absolute endpoints into the owning `ScreenGui`'s local coordinate space before morphing; no fixed inset offset is part of the design.
 

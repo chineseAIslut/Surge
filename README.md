@@ -465,7 +465,7 @@ Surge keeps its fixed left rail, local Lucide PNG bridge with a code-drawn fallb
 - Runtime icons prefer the local Lucide.Lua-style PNG bridge; SVG files under `assets/` are source references and are not passed directly to Roblox. The bridge uses only a bounded icon subset and falls back to Frame primitives.
 - The bridge depends on Potassium filesystem/getcustomasset support. Potassium's public docs do not guarantee binary PNG write semantics or asset-cache behavior; the small sizes used by Surge were verified in the connected client.
 - The menu background layer is centered on the same anchor and position as the window with equal six-pixel margins at the default size. Dragging and minimising update both positions together.
-- Root borders are kept outside content clipping; Body, Sidebar, ContentHost, and tab pages own their clip boundaries. Tab pages include right-side inset padding so scrollbars do not cover row outlines.
+- Root borders are kept outside content clipping; Body, Sidebar, ContentHost, and tab pages own their clip boundaries. Tab pages reserve one pixel of top padding for the first stroked row, keep the overall top/bottom inset unchanged, and include right-side padding so scrollbars do not cover row outlines.
 - The collapsed pill uses a six-pixel drag threshold, clamps to the current viewport, preserves its `UDim2` position across Hide/Show, and only calls `Show()` for a click that did not move.
 - Indeterminate progress keeps its 28%-wide fill inside the track's `0..0.72` travel range and clips the track itself with rounded corners.
 - Hide/Show converts absolute morph targets into the owning `ScreenGui`'s local coordinate space before assigning `UDim2.fromOffset`; no fixed inset compensation is used.
@@ -487,7 +487,7 @@ Surge keeps motion short and reversible through the public `Surge.Animation` tab
 | `Message` | `0.16s` | Toast/notification enter and exit |
 | `Theme` | `0.18s` | Live theme color changes |
 
-The default easing style is `Quad`. `EaseOut` is used for entry and direct response, `EaseIn` for exits, and `EaseInOut` is available for custom callers. Active tweens are cancelled before a replacement starts, so reversals continue from the current property value instead of competing with stale tweens.
+The default easing style is `Quad`. `EaseOut` is used for entry and direct response, `EaseIn` for exits, and `EaseInOut` is available for custom callers. Active tweens on the same properties are cancelled before replacement; disjoint properties may animate concurrently (for example a toggle knob's position and menu transparency), and identity-guarded completion cleanup ignores stale transitions.
 
 Tab changes use a clipped 16-pixel horizontal slide after the outgoing page has faded out. The rail state changes immediately; a temporary input shield prevents outgoing pages and global control listeners from receiving input, and a generation token makes the newest selection authoritative during rapid changes.
 

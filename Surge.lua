@@ -487,46 +487,78 @@ function Window:_connect(signal, callback)
     return nil
 end
 
-function Window:_cancelTween(object)
-    if not self._tweens or not object then
-        return
-    end
-    local record = self._tweens[object]
-    if not record then
-        return
-    end
-    self._tweens[object] = nil
+local function disposeTweenRecord(record, cancel)
     if record.connection then
+        local connection = record.connection
+        record.connection = nil
         pcall(function()
-            record.connection:Disconnect()
+            connection:Disconnect()
         end)
     end
     if record.tween then
-        pcall(function()
-            record.tween:Cancel()
-        end)
+        if cancel then
+            pcall(function()
+                record.tween:Cancel()
+            end)
+        end
         pcall(function()
             record.tween:Destroy()
         end)
     end
 end
 
-function Window:_cancelAllTweens()
-    local records = self._tweens or {}
-    self._tweens = {}
-    for _, record in pairs(records) do
-        if record.connection then
-            pcall(function()
-                record.connection:Disconnect()
-            end)
+local function tweenPropertiesOverlap(record, properties)
+    if type(properties) == "string" then
+        return record.properties and record.properties[properties] == true
+    end
+    for property in pairs(properties or {}) do
+        if record.properties and record.properties[property] then
+            return true
         end
-        if record.tween then
-            pcall(function()
-                record.tween:Cancel()
-            end)
-            pcall(function()
-                record.tween:Destroy()
-            end)
+    end
+    return false
+end
+
+function Window:_cancelTween(object, properties)
+    if not self._tweens or not object then
+        return
+    end
+    local records = self._tweens[object]
+    if not records then
+        return
+    end
+    local recordCount = #records
+    if properties == nil then
+        self._tweens[object] = nil
+        for index = 1, recordCount do
+            disposeTweenRecord(records[index], true)
+        end
+        return
+    end
+    local keep = 1
+    for index = 1, recordCount do
+        local record = records[index]
+        if tweenPropertiesOverlap(record, properties) then
+            disposeTweenRecord(record, true)
+        else
+            records[keep] = record
+            keep = keep + 1
+        end
+    end
+    for index = keep, recordCount do
+        records[index] = nil
+    end
+    if keep == 1 then
+        self._tweens[object] = nil
+    end
+end
+
+function Window:_cancelAllTweens()
+    local recordsByObject = self._tweens or {}
+    self._tweens = {}
+    for _, records in pairs(recordsByObject) do
+        for index = 1, #records do
+            disposeTweenRecord(records[index], true)
         end
     end
 end
@@ -542,11 +574,15 @@ end
 
 
 function Window:_tween(object, properties, duration, easingStyle, easingDirection)
-    if self.unloaded or not object or not object.Parent then
+    if self.unloaded or not object or not object.Parent or type(properties) ~= "table" then
         return nil
     end
     self._tweens = self._tweens or {}
-    self:_cancelTween(object)
+    local propertySet = {}
+    for property in pairs(properties) do
+        propertySet[property] = true
+    end
+    self:_cancelTween(object, propertySet)
     local ok, tween = pcall(function()
         return TweenService:Create(object, TweenInfo.new(
             tonumber(duration) or Surge.Animation.Standard,
@@ -562,22 +598,34 @@ function Window:_tween(object, properties, duration, easingStyle, easingDirectio
         end
         return nil
     end
-    local record = { tween = tween }
-    self._tweens[object] = record
+    local records = self._tweens[object]
+    if not records then
+        records = {}
+        self._tweens[object] = records
+    end
+    local record = { tween = tween, properties = propertySet }
+    table.insert(records, record)
     local connectionOk, connection = pcall(function()
         return tween.Completed:Connect(function()
-            if self._tweens[object] ~= record then
+            local activeRecords = self._tweens[object]
+            if not activeRecords then
                 return
             end
-            self._tweens[object] = nil
-            if record.connection then
-                pcall(function()
-                    record.connection:Disconnect()
-                end)
+            local found
+            for index, candidate in ipairs(activeRecords) do
+                if candidate == record then
+                    table.remove(activeRecords, index)
+                    found = true
+                    break
+                end
             end
-            pcall(function()
-                tween:Destroy()
-            end)
+            if not found then
+                return
+            end
+            if #activeRecords == 0 then
+                self._tweens[object] = nil
+            end
+            disposeTweenRecord(record, false)
         end)
     end)
     if connectionOk then
@@ -642,7 +690,7 @@ function Window:_setVisualTransparency(entries, target)
     for _, entry in ipairs(entries or {}) do
         local object = entry.object
         if object and object.Parent then
-            self:_cancelTween(object)
+            self:_cancelTween(object, entry.property)
             local value = target == "restore" and entry.value or target
             pcall(function()
                 object[entry.property] = value
@@ -1675,7 +1723,7 @@ function Window:CreateTab(properties, legacyIcon)
         ZIndex = 6,
     }, self._contentHost)
     listLayout(tab._page, 8)
-    padding(tab._page, 2, 0, 6, 4)
+padding(tab._page, 2, 1, 6, 3)
     tab._pageOrigin = tab._page.Position
     tab._container = tab._page
     table.insert(self._tabs, tab)
