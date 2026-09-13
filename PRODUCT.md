@@ -33,6 +33,7 @@ Scripts are loaded from Potassium's workspace-relative filesystem using document
 - UI is parented to Potassium's documented `gethui()` container when available.
 - No Studio-only packaging, ModuleScript requirement, remote model dependency, or invented anti-detection guarantee.
 - Palette is limited to black, white, and grayscale values. Callbacks remain outside component logic.
+- The optional bootstrap intentionally refreshes the current `main`-branch library and bridge on every invocation; local loading remains available offline and does not claim release reproducibility.
 - Repeated loading with the same window id must tear down the prior instance before creating the new one.
 - All implemented components need handles with predictable setters/getters where a value exists.
 

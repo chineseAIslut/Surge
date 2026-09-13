@@ -1,11 +1,10 @@
 -- SurgeBootstrap.lua
--- Repository and Ref pin the published release; update both only for a new release.
+-- Fetch the latest Surge sources from the repository's main branch.
 -- The bootstrap uses Potassium's documented request/filesystem APIs.
 
 local Distribution = {
     Repository = "https://github.com/chineseAIslut/Surge",
-    Ref = "v0.1.0",
-    Version = "0.1.0",
+    Ref = "main",
     RepositoryPaths = {
         Library = "Surge.lua",
         LucideBridge = "assets/LucideBridge.lua",
@@ -24,10 +23,7 @@ local function fail(message)
 end
 
 if Distribution.Repository == "" or Distribution.Ref == "" then
-    fail("Repository and immutable Ref are not configured")
-end
-if Distribution.Ref == "main" or Distribution.Ref == "master" or Distribution.Ref == "dev" or Distribution.Ref == "latest" then
-    fail("Ref must be an immutable commit or release tag")
+    fail("Repository and live Ref are not configured")
 end
 
 local requester = request or http_request or (http and http.request)
@@ -78,44 +74,17 @@ local function fetch(path, label, marker)
     return response.Body
 end
 
-local function readValid(path, marker, expectedVersion)
-    if not isfile(path) then
-        return nil
-    end
-    local ok, body = pcall(readfile, path)
-    if not ok or type(body) ~= "string" or not body:find(marker, 1, true) then
-        return nil
-    end
-    local chunk = loadstring(body, "@" .. path)
-    if not chunk then
-        return nil
-    end
-    if expectedVersion then
-        local loaded, module = pcall(chunk)
-        if not loaded or type(module) ~= "table" or module.Version ~= expectedVersion then
-            return nil
-        end
-    end
-    return body
-end
-
 ensureFolder(Distribution.ManagedPaths.Assets)
 ensureFolder(Distribution.ManagedPaths.Managed)
-local librarySource = readValid(Distribution.ManagedPaths.Library, "return Surge", Distribution.Version)
-if not librarySource then
-    librarySource = fetch(Distribution.RepositoryPaths.Library, "Surge library", "return Surge")
-    writefile(Distribution.ManagedPaths.Library, librarySource)
-end
-local bridgeSource = readValid(Distribution.ManagedPaths.LucideBridge, "return Bridge")
-if not bridgeSource then
-    bridgeSource = fetch(Distribution.RepositoryPaths.LucideBridge, "LucideBridge", "return Bridge")
-    writefile(Distribution.ManagedPaths.LucideBridge, bridgeSource)
-end
+local librarySource = fetch(Distribution.RepositoryPaths.Library, "Surge library", "return Surge")
+local bridgeSource = fetch(Distribution.RepositoryPaths.LucideBridge, "LucideBridge", "return Bridge")
+writefile(Distribution.ManagedPaths.Library, librarySource)
+writefile(Distribution.ManagedPaths.LucideBridge, bridgeSource)
 
 local chunk, compileError = loadstring(librarySource, "@github:" .. Distribution.Ref .. "/" .. Distribution.RepositoryPaths.Library)
 assert(chunk, compileError)
 local Surge = chunk()
-assert(type(Surge) == "table" and Surge.Version == Distribution.Version, "Surge version mismatch")
+assert(type(Surge) == "table" and type(Surge.Version) == "string", "Surge library returned an invalid module")
 Surge.Distribution.Repository = Distribution.Repository
 Surge.Distribution.Ref = Distribution.Ref
 return Surge

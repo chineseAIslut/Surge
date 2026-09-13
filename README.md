@@ -23,7 +23,7 @@ The repository includes a screenshot of the GitHub-loaded Final Preview:
     LucideBridge.lua         -- local Lucide.Lua-style PNG bridge
     lucide-*.svg            -- source-level Lucide references
   Final-Surge-Preview.lua    -- GitHub release preview
-  SurgeBootstrap.lua         -- optional pinned GitHub bootstrap template
+  SurgeBootstrap.lua         -- optional live main-branch GitHub bootstrap template
 ```
 
 The preview is intentionally outside the library folder:
@@ -47,13 +47,13 @@ local Surge = chunk()
 The `scripts/Final-Surge-Preview.lua` location is the local delivery path for the GitHub release preview. Potassium's public filesystem docs do not promise that an absolute path outside `workspace` can be passed to `readfile`, so use the preview through the Potassium script runner or copy it into the executor workspace when that runner requires workspace-relative files.
 ## GitHub distribution and workspace setup
 
-The published release currently pins `Surge.Distribution.Repository = "https://github.com/chineseAIslut/Surge"` and `Surge.Distribution.Ref = "v0.1.0"`. Future releases must update both together; the ref must remain an immutable release tag or commit.
+The default distribution follows the repository's `main` branch: `Surge.Distribution.Repository = "https://github.com/chineseAIslut/Surge"` and `Surge.Distribution.Ref = "main"`.
 
-`Surge:GetBootstrap()` returns a short Potassium bootstrap only when both values are configured. The bootstrap uses Potassium's documented `request` API, requires a successful 2xx response, writes the pinned library and Lucide bridge into workspace-relative managed paths, checks the library version, and then loads the chunk. Mutable refs such as `main`, `master`, `dev`, and `latest` are rejected. The core library remains usable offline and does not download code automatically unless `EnsureAssets()` is explicitly called.
+`SurgeBootstrap.lua` fetches the current `Surge.lua` and Lucide bridge on every invocation before writing the managed files. This intentionally favors freshness over reproducibility; a live fetch, validation, or write failure is reported instead of silently loading an older managed copy. `Surge:GetBootstrap()` returns the same live-fetch behavior as generated bootstrap code. The core library can still be loaded offline through the local loader above.
 
 ```lua
 local bootstrap, bootstrapError = Surge:GetBootstrap()
-assert(bootstrap, bootstrapError) -- fails clearly when a release pin is unset
+assert(bootstrap, bootstrapError) -- fails clearly when repository/ref is unset
 local loaded = assert(loadstring(bootstrap, "@SurgeBootstrap"))()
 ```
 
@@ -71,7 +71,7 @@ Surge/
     manifest.json
 ```
 
-Existing valid managed files are reused. If no repository is configured, the local `.Surge/assets/LucideBridge.lua` source is copied into the managed bridge path when possible. A configured repository is fetched only through Potassium's `request`; failed status codes, empty bodies, invalid source markers, and write failures are reported and never accepted as valid managed files. Existing valid cache files remain usable on download failure.
+`Surge:EnsureAssets()` may reuse valid managed files for ordinary local library use. `SurgeBootstrap.lua` is the explicit refresh path and bypasses that cache on every run; it fails when the current source cannot be fetched, validated, or written. Local source and stale-cache fallbacks remain available only to `EnsureAssets()` when its normal offline-compatible path is used.
 
 ## Config API
 
@@ -158,8 +158,8 @@ The library accepts both the documented Gen2-style lowercase keys (`name`, `call
 - `Surge:RegisterIcon(name, definition)` — add a custom code-drawn icon.
 - `Surge:CreateIcon(parent, name, options)` — draw one icon in an existing Roblox UI instance.
 - `Surge:EnsureWorkspace()` — create the managed workspace tree without overwriting user files.
-- `Surge:EnsureAssets()` — reuse or prepare managed library/Lucide files; network access is explicit and requires a configured pinned distribution.
-- `Surge:GetBootstrap()` — return a pinned GitHub bootstrap or a clear error when repository/ref are unset.
+- `Surge:EnsureAssets()` — reuse or prepare managed library/Lucide files for local library use.
+- `Surge:GetBootstrap()` — return a live main-branch GitHub bootstrap or a clear error when repository/ref are unset.
 
 ### Window options
 
@@ -459,7 +459,7 @@ Rows are reordered within their current tab/group container. Tags remain title-b
 
 ## Deliberate differences from stable Rayfield Gen2
 
-Surge keeps its fixed left rail, local Lucide PNG bridge with a code-drawn fallback, grayscale-only visual system, workspace-relative JSON persistence, and no Studio/ModuleScript contract. It does not automatically load remote models, fonts, or icon packages. The optional explicit distribution/bootstrap layer uses Potassium's documented `request` only when a release owner has configured an immutable repository ref.
+Surge keeps its fixed left rail, local Lucide PNG bridge with a code-drawn fallback, grayscale-only visual system, workspace-relative JSON persistence, and no Studio/ModuleScript contract. It does not automatically load remote models, fonts, or icon packages. The optional distribution/bootstrap layer uses Potassium's documented `request` to fetch the current main-branch source when explicitly requested; the local loader remains offline.
 ## Visual QA notes
 
 - Runtime icons prefer the local Lucide.Lua-style PNG bridge; SVG files under `assets/` are source references and are not passed directly to Roblox. The bridge uses only a bounded icon subset and falls back to Frame primitives.
@@ -544,17 +544,17 @@ Required runtime capabilities:
 - A UI parent: Potassium's documented `gethui()` is preferred; `CoreGui` is a fallback when accessible.
 - `readfile` + `loadstring` only for the loader/preview, not for window construction.
 
-- `request` for explicit, configured GitHub asset/bootstrap downloads; the core loader remains offline by default.
+- `request` for explicitly requested live GitHub bootstrap and asset refreshes; the core local loader remains offline.
 Optional capabilities:
 
 - Filesystem functions for persistence.
 - `setclipboard` for `Console:Copy()`.
 - `getgenv` for the shared repeated-load registry. `_G` is used as a fallback.
 
-Surge does **not** implement or promise Rayfield's secure mode, anti-detection, asset fingerprinting behavior, remote model loading, key systems, Discord joins, remote fonts, or thumbnail caching. Its optional distribution layer performs only explicitly requested, pinned downloads through Potassium's `request` API. Potassium documentation states that executor capabilities and policies can vary, and current bridge status/capabilities must be checked before execution.
+Surge does **not** implement or promise Rayfield's secure mode, anti-detection, asset fingerprinting behavior, remote model loading, key systems, Discord joins, remote fonts, or thumbnail caching. Its optional distribution layer performs explicitly requested live main-branch downloads through Potassium's `request` API and therefore does not promise immutable release reproducibility. Potassium documentation states that executor capabilities and policies can vary, and current bridge status/capabilities must be checked before execution.
 
 Known limitations:
-
+- The live bootstrap follows `main`; source content can change between runs, and the bootstrap requires a successful current fetch rather than using an older managed library as an offline substitute.
 - No Studio/ModuleScript compatibility contract.
 - No guarantee that any non-Potassium executor exposes the optional globals.
 - Public Potassium docs do not specify absolute-path, traversal, recursive-folder, encoding, or asset-cache behavior; the library does not rely on those assumptions.

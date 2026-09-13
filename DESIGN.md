@@ -42,4 +42,4 @@ Runtime icons first use the local Lucide.Lua-style PNG bridge for the bounded, v
 
 ## Constraints
 
-Only black, white, and grayscale colors are used, including caller-provided tag colors normalized by the library. No network loader, Roblox model, marketplace asset ID, Studio ModuleScript, secure-mode promise, or generic anti-detection claim is part of the system.
+The core library has no network loader or remote runtime dependency. The optional bootstrap uses Potassium's documented `request` API to refresh the current `main`-branch library and bridge; it intentionally trades immutable release reproducibility for freshness.

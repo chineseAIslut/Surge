@@ -21,7 +21,7 @@ Surge.Distribution = {
     AssetVersion = 2,
     Version = Surge.Version,
     Repository = "https://github.com/chineseAIslut/Surge",
-    Ref = "v0.1.0",
+    Ref = "main",
     SourcePaths = {
         Library = ".Surge/Surge.lua",
         LucideBridge = ".Surge/assets/LucideBridge.lua",
@@ -5027,9 +5027,6 @@ function Surge:GetBootstrap()
     if repository == "" or ref == "" then
         return false, "Surge bootstrap repository/ref is unset; configure Surge.Distribution before publishing"
     end
-    if ref == "main" or ref == "master" or ref == "dev" or ref == "latest" then
-        return false, "Surge bootstrap requires an immutable commit or release ref"
-    end
     local quote = function(value)
         return string.format("%q", tostring(value))
     end
@@ -5063,7 +5060,7 @@ function Surge:GetBootstrap()
         "writefile(" .. quote(paths.LucideBridge) .. ", bridgeSource)",
         "local chunk = assert(loadstring(librarySource, \"@github:" .. ref .. "/" .. distribution.RepositoryPaths.Library .. "\"))",
         "local Surge = chunk()",
-        "assert(Surge.Version == " .. quote(distribution.Version) .. ", \"Surge version mismatch\")",
+        "assert(type(Surge) == \"table\" and type(Surge.Version) == \"string\", \"Surge library returned an invalid module\")",
         "return Surge",
     }, "\n")
     return code
